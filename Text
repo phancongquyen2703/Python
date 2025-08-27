@@ -1,1 +1,86 @@
 https://drive.google.com/drive/folders/1NRPV2h3f1Pcm2ULd59YTqFlvLcGy4HEn?usp=sharing
+
+----------------------------------------------------------------------------------------------------------------------------------
+Attribute VB_Name = "Module2"
+Sub CreatePivot()
+    Dim wsData As Worksheet
+    Dim wsPivot As Worksheet
+    Dim pc As PivotCache
+    Dim pt As PivotTable
+    Dim rng As Range
+    
+    ' Set data sheet
+    Set wsData = ThisWorkbook.Sheets("Data")
+    
+    ' Define data range (dynamic last row)
+    Set rng = wsData.Range("A1").CurrentRegion
+    
+    ' Delete old Pivot sheet if exists
+    On Error Resume Next
+    Application.DisplayAlerts = False
+    ThisWorkbook.Sheets("Pivot").Delete
+    Application.DisplayAlerts = True
+    On Error GoTo 0
+    
+    ' Add new Pivot sheet
+    Set wsPivot = ThisWorkbook.Sheets.Add
+    wsPivot.Name = "Pivot"
+    
+    ' Create Pivot Cache
+    Set pc = ThisWorkbook.PivotCaches.Create( _
+        SourceType:=xlDatabase, _
+        SourceData:=rng.Address(True, True, xlR1C1, True))
+    
+    ' Create Pivot Table
+    Set pt = pc.CreatePivotTable( _
+        TableDestination:=wsPivot.Range("A3"), _
+        TableName:="SalesPivot")
+    
+    ' Add Fields
+    With pt
+        .PivotFields("Region").Orientation = xlRowField
+        .PivotFields("Product").Orientation = xlColumnField
+        .AddDataField .PivotFields("Sales"), "Sum of Sales", xlSum
+        .PivotFields("Date").Orientation = xlPageField
+    End With
+    
+End Sub
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+
+3. Cách chạy bằng UiPath
+
+Trong UiPath Studio, bạn làm như sau:
+
+Use Excel Application Scope
+
+Input: PivotTemplate.xlsm
+
+Invoke VBA activity
+
+Path: chọn file .bas nếu export code (hoặc copy code VBA vào Editor).
+
+EntryMethodName: "CreatePivot"
+
+Save Workbook (nếu cần).
+
+👉 Cách đơn giản hơn:
+
+Trong Excel Application Scope, dùng Execute Macro activity.
+
+Gõ tên macro: CreatePivot.
+
+-----------------------------------
+
+
+⚠️ Lưu ý:
+
+File phải là .xlsm và Macro đã được bật (Enable Macros).
+
+Nếu Macro nằm trong Module thì chỉ cần gọi đúng tên Sub (CreatePivot).
+
+Nếu bị chặn bởi security Excel, cần bật Trust access to VBA project object model trong Excel Options → Trust Center
+
+
+
