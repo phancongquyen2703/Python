@@ -1,0 +1,125 @@
+Great question 👍 — if you want Power Automate Desktop (PAD) to connect to SharePoint Online without relying on a user sign-in, the proper way is to use an Azure AD App Registration (ApplicationID/TenantID/Secret or Certificate). This is very common for unattended RPA.
+
+I’ll walk you through it step by step:
+
+🔹 Step 1. Register an App in Azure AD
+
+Go to Azure Portal → Azure Active Directory → App registrations → New registration.
+
+Fill in:
+
+Name: PAD-SharePoint-Downloader
+
+Supported account types: Single tenant (unless you need multi-tenant).
+
+Redirect URI: leave blank for now.
+
+After creation, note down:
+
+Application (client) ID (this is your ApplicationID)
+
+Directory (tenant) ID (this is your TenantID)
+
+🔹 Step 2. Configure API Permissions
+
+In your app → API permissions → Add a permission.
+
+Select Microsoft Graph (preferred modern API):
+
+Delegated: not needed here (we don’t want interactive sign-in)
+
+Application permissions → Search Sites → add:
+
+Sites.Read.All
+
+(optional) Sites.ReadWrite.All if you want upload/write.
+
+Click Grant admin consent to approve the app’s permissions.
+
+🔹 Step 3. Create a Client Secret
+
+In the app → Certificates & secrets → New client secret.
+
+Copy the generated secret value (you’ll only see it once).
+
+This is your ClientSecret.
+
+🔹 Step 4. Grant the App Access to SharePoint Site
+
+Even with Graph permissions, the app needs explicit SharePoint site access:
+
+Go to your SharePoint site (https://company.sharepoint.com/sites/ProjectX).
+
+Open Site Settings → Site permissions → Advanced permissions.
+
+Add the Azure AD app (by its name) and give it at least Read (or Contribute) rights.
+
+🔹 Step 5. Get an Access Token (OAuth2 client credentials)
+
+From PAD (or any HTTP tool), you’ll request a token:
+
+Endpoint:
+
+POST https://login.microsoftonline.com/{TenantID}/oauth2/v2.0/token
+
+
+Body (x-www-form-urlencoded):
+
+client_id=YOUR_APP_ID
+scope=https://graph.microsoft.com/.default
+client_secret=YOUR_CLIENT_SECRET
+grant_type=client_credentials
+
+
+Response:
+
+{
+  "token_type": "Bearer",
+  "expires_in": 3599,
+  "access_token": "eyJ0eXAiOiJKV1Qi..."
+}
+
+🔹 Step 6. Call Microsoft Graph / SharePoint REST
+
+Now you can use this token in PAD via the Invoke web service action.
+
+Example: Download a file
+
+GET https://graph.microsoft.com/v1.0/sites/{hostname}:/sites/ProjectX:/drive/root:/Shared Documents/Test/file.docx:/content
+Authorization: Bearer {access_token}
+
+
+Example: List folder
+
+GET https://graph.microsoft.com/v1.0/sites/{hostname}:/sites/ProjectX:/drive/root:/Shared Documents/Test:/children
+Authorization: Bearer {access_token}
+
+
+📌 Replace {hostname} with company.sharepoint.com.
+
+🔹 Step 7. Integrate into PAD
+
+In Power Automate Desktop:
+
+Use Invoke web service (or Invoke web service (Preview) in latest PAD).
+
+First call: request the token (Step 5). Parse JSON → store %access_token%.
+
+Next calls: use the token in the Authorization header when calling Graph endpoints.
+
+Process the response (downloaded file is binary, so save to disk using Convert binary data to file).
+
+✅ Advantages of this method:
+
+No user interaction → perfect for unattended RPA.
+
+Secure (can rotate secrets or use certificate auth).
+
+Works with service accounts, no dependency on UI login.
+
+👉 Do you want me to build you a PAD mini-flow (step by step with actions) that shows exactly how to:
+
+Get token from Azure AD (using TenantID/AppID/Secret),
+
+Download a file from SharePoint with Graph API,
+so you can plug it into your bigger recursive flow?
