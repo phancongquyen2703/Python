@@ -1,0 +1,29 @@
+Set outlookApp = CreateObject("Outlook.Application")
+Set accounts = outlookApp.Session.Accounts
+
+For Each acc In accounts
+    WScript.Echo "Account: " & acc.DisplayName & " | Email: " & acc.SmtpAddress
+Next
+
+------------------------
+
+
+Dim outlookApp, accounts, acc
+Set outlookApp = CreateObject("Outlook.Application")
+Set accounts = outlookApp.Session.Accounts
+
+Dim targetEmail
+targetEmail = ""
+
+For Each acc In accounts
+    If acc.DisplayName = "Your Account Name Here" Then
+        targetEmail = acc.SmtpAddress
+        Exit For
+    End If
+Next
+
+If targetEmail <> "" Then
+    WScript.Echo targetEmail
+Else
+    WScript.Echo "Account not found"
+End If
