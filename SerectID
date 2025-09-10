@@ -1,0 +1,39 @@
+Vì sao với UiPath Microsoft Office 365 Scope bạn không cần client secret?
+
+Activity Microsoft Office 365 Scope trong UiPath không dùng App-only (client_credentials) mặc định.
+
+Nó dùng OAuth 2.0 Interactive flow (kiểu Delegated permission, hay còn gọi là Device code flow hoặc Authorization code flow).
+
+Cơ chế:
+
+Bạn chỉ cần khai báo Application (client) ID và Tenant ID.
+
+UiPath framework sẽ mở cửa sổ đăng nhập Microsoft → bạn đăng nhập bằng tài khoản O365 cá nhân/công ty.
+
+Sau khi login, UiPath nhận về refresh token + access token từ Azure AD.
+
+Token này đại diện cho người dùng, không cần client secret.
+
+👉 Vì thế: Application ID + Tenant ID là đủ để Azure AD biết bạn đang muốn login vào app nào. Secret không cần, vì Azure AD dùng login user để xác thực thay cho bí mật app.
+
+🔹 Trong khi đó, với App-only (client_credentials) flow (khi bạn code tay bằng Graph API hoặc PAD):
+
+Không có user nào đăng nhập → bạn cần chứng minh “App này thật sự là của bạn”.
+
+Để làm vậy, bạn phải đưa thêm client_secret hoặc certificate.
+
+Đây chính là ứng dụng không có user login (service-to-service, background job).
+
+Vì thế, bắt buộc cần Application ID + Tenant ID + Secret/Cert.
+
+🔹 So sánh nhanh
+Đặc điểm	UiPath O365 Scope (Delegated)	PAD / Graph API (App-only)
+Loại flow	OAuth2 Authorization Code / Device code (user login)	OAuth2 Client Credentials (no user)
+Cần client secret?	❌ Không (user login xác thực thay thế)	✅ Có (để chứng minh app)
+Quyền hạn	Quyền theo user đã đăng nhập	Quyền theo App permissions đã grant
+Kịch bản	Tự động hóa khi có user login sẵn, tác vụ cá nhân	Dịch vụ chạy nền, không cần user, cron job
+🔹 Vậy nên
+
+Trong UiPath O365 Scope: bạn đang “mượn quyền” của người dùng → không cần client secret.
+
+Trong PAD với Graph API app-only: bạn đang chạy như dịch vụ nền → cần client secret (hoặc certificate).
