@@ -1,1 +1,19 @@
 https://learn.microsoft.com/en-us/sharepoint/dev/sp-add-ins/working-with-folders-and-files-with-rest
+
+uri: _api/SP.MoveCopyUtil.MoveFolderByPath()
+header: Accept: application/json;odata=verbose
+
+{
+    "srcPath": {
+             "DecodedUrl": "https://fptsoftware362.sharepoint.com/sites/MyTeamPowerApps/Shared Documents/Database_test/1"
+    },
+    "destPath": {
+       "DecodedUrl": "https://fptsoftware362.sharepoint.com/sites/MyTeamPowerApps/Shared Documents/Database_test/2/1"
+    },
+	"options": {
+    "KeepBoth": false,
+    "ResetAuthorAndCreatedOnCopy": false,
+    "ShouldBypassSharedLocks": true
+  }
+
+}
