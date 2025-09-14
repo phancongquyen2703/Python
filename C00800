@@ -92,3 +92,25 @@ Header: {
   "ServerRelativeUrl": "/sites/MyTeamPowerApps/Shared Documents/NewFolderDemo"
 }
 
+
+🅐 Cách 1 — File nhỏ (< 250 MB): add
+
+URL
+
+POST https://<tenant>.sharepoint.com/sites/<site>/_api/web/GetFolderByServerRelativeUrl('/sites/<site>/Shared Documents/MyNewFolder')/Files/add(url='MyFile.docx',overwrite=true)
+
+
+Headers
+
+{
+  "Accept": "application/json;odata=verbose",
+  "Content-Type": "application/octet-stream"
+}
+
+
+Body
+
+<binary file content>
+
+
+📌 Ở Power Automate Cloud, phần Body bạn đặt là content lấy từ action như Get file content (OneDrive/SharePoint/File System).
