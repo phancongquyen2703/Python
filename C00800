@@ -17,3 +17,64 @@ header: Accept: application/json;odata=verbose
   }
 
 }
+
+
+Rất tốt — thông tin bạn đưa là mấu chốt quan trọng:
+
+➤ Bạn đã thêm "KeepBoth": false nhưng vẫn lỗi
+➤ Lỗi: The destination file already exists.
+
+📍 Điều này cho thấy:
+
+API SP.MoveCopyUtil.MoveFolderByPath không thực sự ghi đè nếu thư mục đích đã tồn tại.
+
+KeepBoth=false không có nghĩa là overwrite, nó chỉ tắt tính năng tạo bản copy mới nếu đích chưa tồn tại → nhưng nếu đã tồn tại, SharePoint sẽ báo lỗi và dừng.
+
+🔹 Nói cách khác: MoveFolderByPath không thể overwrite → bạn phải xóa thư mục đích trước khi di chuyển.
+
+✅ Giải pháp đúng: Xóa thư mục đích nếu đã tồn tại → sau đó mới Move
+Bước 1 — Kiểm tra thư mục đích có tồn tại không
+GET https://<tenant>.sharepoint.com/sites/<site>/_api/web/getfolderbyserverrelativeurl('/sites/<site>/Shared Documents/TargetFolder/SourceFolder')
+
+
+Nếu trả về 200 → folder tồn tại
+
+Nếu trả về 404 → chưa tồn tại
+
+Bước 2 — Nếu có, xóa thư mục đích
+POST https://<tenant>.sharepoint.com/sites/<site>/_api/web/getfolderbyserverrelativeurl('/sites/<site>/Shared Documents/TargetFolder/SourceFolder')
+
+
+Headers
+
+X-HTTP-Method: DELETE
+IF-MATCH: *
+
+Bước 3 — Gọi MoveFolderByPath như bạn đang làm
+POST https://<tenant>.sharepoint.com/sites/<site>/_api/SP.MoveCopyUtil.MoveFolderByPath()
+
+
+Body
+
+{
+  "srcPath": {
+    "DecodedUrl": "https://<tenant>.sharepoint.com/sites/<site>/Shared Documents/SourceFolder"
+  },
+  "destPath": {
+    "DecodedUrl": "https://<tenant>.sharepoint.com/sites/<site>/Shared Documents/TargetFolder/SourceFolder"
+  },
+  "options": {
+    "KeepBoth": false,
+    "ResetAuthorAndCreatedOnCopy": false,
+    "ShouldBypassSharedLocks": true
+  }
+}
+******************************************
+⚡ Tóm gọn
+Vấn đề	Thực tế
+KeepBoth=false	❌ Không overwrite nếu đích đã tồn tại
+Muốn overwrite	✅ Phải xóa thư mục đích trước, rồi mới gọi MoveFolderByPath
+
+💬 Nếu bạn muốn, mình có thể viết luôn flow 3 bước (Check → Delete → Move) dạng REST API mẫu để bạn chỉ cần copy vào Power Automate Desktop (Invoke Web Service).
+
+Bạn có muốn mình tạo sẵn mẫu đó không? (sẽ giải quyết triệt để lỗi The destination file already exists.)
