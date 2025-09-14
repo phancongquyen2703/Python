@@ -78,3 +78,17 @@ Muốn overwrite	✅ Phải xóa thư mục đích trước, rồi mới gọi M
 💬 Nếu bạn muốn, mình có thể viết luôn flow 3 bước (Check → Delete → Move) dạng REST API mẫu để bạn chỉ cần copy vào Power Automate Desktop (Invoke Web Service).
 
 Bạn có muốn mình tạo sẵn mẫu đó không? (sẽ giải quyết triệt để lỗi The destination file already exists.)
+
+- Create Folder: 
+
+URL: _api/web/folders
+Method: Post
+Body: {
+  "__metadata": { "type": "SP.Folder" },
+  "ServerRelativeUrl": "/sites/MyTeamPowerApps/Shared Documents/NewFolderDemo"
+}
+Header: {
+  "__metadata": { "type": "SP.Folder" },
+  "ServerRelativeUrl": "/sites/MyTeamPowerApps/Shared Documents/NewFolderDemo"
+}
+
