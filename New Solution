@@ -100,3 +100,25 @@ Gọi API move từng file sang thư mục mới
 Gọi API xóa thư mục cũ
 
 📍Bạn có muốn mình tạo file .json đó không? (Bạn chỉ cần nhập token, site và tên thư mục)
+
+
+
+📌 Giải thích nhanh
+
+Trong SharePoint REST API, để xóa folder hoặc file, ta không thể gọi DELETE trực tiếp từ Power Automate Desktop.
+
+Thay vào đó, ta phải:
+
+Gọi POST đến endpoint
+
+Và thêm header:
+
+X-HTTP-Method: DELETE
+
+IF-MATCH: *
+
+Content-Length: 0
+
+Content-Type: application/json;odata=verbose
+
+Nếu thiếu Content-Length: 0, SharePoint sẽ trả về 411 Length Required.
