@@ -1,0 +1,77 @@
+Move Folder
+📌 Các bước thực hiện trong PAD
+🅐 Bước 1 — Gọi Azure AD lấy Access Token
+
+HTTP POST
+
+https://accounts.accesscontrol.windows.net/<tenant-id>/tokens/OAuth/2
+
+
+Body (x-www-form-urlencoded):
+
+grant_type=client_credentials
+&client_id=<appId>@<tenantId>
+&client_secret=<secret>
+&resource=00000003-0000-0ff1-ce00-000000000000/<tenant>.sharepoint.com@<tenantId>
+
+
+Nhận về: access_token
+
+🅑 Bước 2 — Lấy RequestDigest
+
+HTTP POST
+
+https://<tenant>.sharepoint.com/sites/<site>/_api/contextinfo
+
+
+Headers
+
+Authorization: Bearer <access_token>
+Accept: application/json;odata=verbose
+
+
+Kết quả: trong d.GetContextWebInformation.FormDigestValue
+
+🅒 Bước 3 — Gọi MoveFolderByPath
+
+POST
+
+https://<tenant>.sharepoint.com/sites/<site>/_api/SP.MoveCopyUtil.MoveFolderByPath()
+
+
+Headers
+
+{
+  "Accept": "application/json;odata=verbose",
+  "Content-Type": "application/json;odata=verbose",
+  "Authorization": "Bearer <access_token>",
+  "X-RequestDigest": "<FormDigestValue>"
+}
+
+
+Body
+
+{
+  "srcPath": { "DecodedUrl": "/sites/<site>/Shared Documents/OldFolder" },
+  "destPath": { "DecodedUrl": "/sites/<site>/Shared Documents/NewFolder/OldFolder" },
+  "options": { "KeepBoth": false, "ResetAuthorAndCreatedOnCopy": true }
+}
+
+
+✅ Lúc này SharePoint mới thực sự thực hiện việc di chuyển.
+
+📌 Tóm gọn
+
+Trong PAD, bạn phải tự cấp token + digest → nếu không, SharePoint trả về null và không move dù báo 200
+
+Trong Cloud, hệ thống làm giúp bạn
+
+📦 Nếu bạn muốn, mình có thể viết sẵn file .json Flow mẫu cho Power Automate Desktop gồm:
+
+Bước lấy token
+
+Bước lấy digest
+
+Bước gọi MoveFolderByPath
+
+Bạn có muốn mình tạo mẫu đó không? (copy vào PAD là chạy được luôn)
