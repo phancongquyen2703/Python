@@ -1,0 +1,102 @@
+Rất tuyệt — đây chính là manh mối quan trọng 👇
+
+Bạn nói:
+
+CopyFolderByPath() cũng trả về null tương tự như MoveFolderByPath()
+
+→ Điều này xác nhận rằng request đã được gửi thành công (Status 200) nhưng SharePoint không thực hiện thao tác nào cả.
+
+📌 Đây là lỗi phổ biến khi gọi các hàm SP.MoveCopyUtil.* (MoveFolderByPath / MoveFileByPath / CopyFolderByPath / CopyFileByPath) từ Power Automate Desktop (PAD) hoặc bất kỳ môi trường không chạy trong context người dùng SharePoint.
+
+⚠ Nguyên nhân kỹ thuật
+
+SP.MoveCopyUtil là API nội bộ SharePoint thường được gọi từ trình duyệt SharePoint UI hoặc Power Automate Cloud.
+
+Khi chạy từ PAD, bạn không có SPContext.Current.Web.CurrentUser → SharePoint coi như ngữ cảnh người dùng trống, và sẽ trả về {MoveFolderByPath: null} mà không báo lỗi.
+
+Do đó dù status = 200, không có gì được thực hiện.
+
+Vì vậy:
+
+❌ MoveFolderByPath / CopyFolderByPath không hoạt động trong PAD
+✅ Nhưng vẫn hoạt động bình thường trong Power Automate Cloud hoặc Postman (nơi có context đầy đủ)
+
+✅ Giải pháp thay thế HOẠT ĐỘNG TRONG PAD
+
+Vì không thể dùng SP.MoveCopyUtil, bạn phải thay bằng các REST API SharePoint gốc (Web API) theo 2 bước:
+
+📝 Bước 1 — Tạo thư mục đích
+
+POST
+
+https://<tenant>.sharepoint.com/sites/<site>/_api/web/folders
+
+
+Headers
+
+{
+  "Accept": "application/json;odata=verbose",
+  "Content-Type": "application/json;odata=verbose",
+  "Authorization": "Bearer <access_token>",
+  "X-RequestDigest": "<FormDigestValue>"
+}
+
+
+Body
+
+{
+  "__metadata": { "type": "SP.Folder" },
+  "ServerRelativeUrl": "/sites/<site>/Shared Documents/NewFolder"
+}
+
+📝 Bước 2 — Di chuyển từng file trong thư mục nguồn sang thư mục đích
+
+POST
+
+https://<tenant>.sharepoint.com/sites/<site>/_api/web/getFileByServerRelativeUrl('/sites/<site>/Shared Documents/OldFolder/<filename>')
+/moveTo(newurl='/sites/<site>/Shared Documents/NewFolder/<filename>',flags=1)
+
+
+Headers
+
+{
+  "X-RequestDigest": "<FormDigestValue>",
+  "Authorization": "Bearer <access_token>"
+}
+
+
+⚡ flags=1 nghĩa là cho phép ghi đè nếu file tồn tại
+
+📝 Bước 3 — Xóa thư mục gốc
+
+POST
+
+https://<tenant>.sharepoint.com/sites/<site>/_api/web/GetFolderByServerRelativeUrl('/sites/<site>/Shared Documents/OldFolder')
+
+
+Headers
+
+{
+  "X-HTTP-Method": "DELETE",
+  "IF-MATCH": "*",
+  "Authorization": "Bearer <access_token>",
+  "X-RequestDigest": "<FormDigestValue>"
+}
+
+✅ Ưu điểm
+
+Hoạt động 100% trong Power Automate Desktop
+
+Không phụ thuộc SPContext nên không bị null
+
+Có thể kiểm soát lỗi từng bước (tạo, di chuyển, xóa)
+
+📦 Nếu bạn muốn, mình có thể tạo sẵn PAD Flow (.json) gồm 3 bước:
+
+Gọi API lấy danh sách file trong thư mục
+
+Gọi API move từng file sang thư mục mới
+
+Gọi API xóa thư mục cũ
+
+📍Bạn có muốn mình tạo file .json đó không? (Bạn chỉ cần nhập token, site và tên thư mục)
