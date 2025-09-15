@@ -75,3 +75,55 @@ Bước lấy digest
 Bước gọi MoveFolderByPath
 
 Bạn có muốn mình tạo mẫu đó không? (copy vào PAD là chạy được luôn)
+
+
+✅ Giải pháp thay thế hoạt động ổn định
+
+Thay vì MoveFolderByPath(), hãy dùng chuỗi 2 REST API: Copy + Delete. Đây là cách phổ biến được Microsoft chính thức khuyến nghị khi không dùng CSOM:
+
+📍 Bước 1 — Copy thư mục
+
+POST
+
+https://<tenant>.sharepoint.com/sites/<site>/_api/SP.MoveCopyUtil.CopyFolderByPath()
+
+
+Headers
+
+{
+  "Accept": "application/json;odata=verbose",
+  "Content-Type": "application/json;odata=verbose",
+  "Authorization": "Bearer <access_token>",
+  "X-RequestDigest": "<FormDigestValue>"
+}
+
+
+Body
+
+{
+  "srcPath": { "DecodedUrl": "/sites/<site>/Shared Documents/OldFolder" },
+  "destPath": { "DecodedUrl": "/sites/<site>/Shared Documents/NewParent/OldFolder" },
+  "options": { "KeepBoth": false, "ResetAuthorAndCreatedOnCopy": true }
+}
+
+
+📌 Đợi khi copy xong mới qua bước xóa.
+
+📍 Bước 2 — Delete thư mục gốc
+
+POST (vì DELETE không được hỗ trợ trực tiếp qua PAD invoke)
+
+https://<tenant>.sharepoint.com/sites/<site>/_api/web/GetFolderByServerRelativeUrl('/sites/<site>/Shared Documents/OldFolder')
+
+
+Headers
+
+{
+  "X-RequestDigest": "<FormDigestValue>",
+  "IF-MATCH": "*",
+  "X-HTTP-Method": "DELETE",
+  "Authorization": "Bearer <access_token>"
+}
+
+
+📌 Đây là "trick" gọi DELETE trong PAD: dùng POST + header X-HTTP-Method: DELETE.
