@@ -1,0 +1,22 @@
+SET Path TO $'''C:\\Users\\Acer\\OneDrive\\Máy tính\\Desktop\\PAD'''
+@@copilotScriptingAction: 'True'
+Scripting.RunPowershellScript.RunPowershellScriptAndFailOnTimeout Script: $'''$path = \"%Path%\"
+if (Test-Path $path -PathType Leaf) {
+    \"File\"
+} elseif (Test-Path $path -PathType Container) {
+    \"Folder\"
+} else {
+    \"NotExist\"
+}
+''' Timeout: 10 ScriptOutput=> PowershellOutput
+# Create Folder Parent
+/# Get File in Parent Folder. 
+If exist-  Upload to sharepoint#/
+# Get Sub Folder
+Folder.GetSubfolders Folder: $'''C:\\Users\\Acer\\OneDrive\\Máy tính\\Desktop\\PAD''' FolderFilter: $'''*''' IncludeSubfolders: True FailOnAccessDenied: True SortBy1: Folder.SortBy.NoSort SortDescending1: False SortBy2: Folder.SortBy.NoSort SortDescending2: False SortBy3: Folder.SortBy.NoSort SortDescending3: False Subfolders=> Folders
+LOOP FOREACH CurrentItem IN Folders
+    # Create Sub Folder
+    /# Get File in SubFolder. 
+If exist-  Upload to sharepoint Sub Folder#/
+    Folder.GetFiles Folder: CurrentItem.FullName FileFilter: $'''*''' IncludeSubfolders: False FailOnAccessDenied: True SortBy1: Folder.SortBy.NoSort SortDescending1: False SortBy2: Folder.SortBy.NoSort SortDescending2: False SortBy3: Folder.SortBy.NoSort SortDescending3: False Files=> Files
+END
