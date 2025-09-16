@@ -1,0 +1,46 @@
+Variables.CreateNewDatatable InputTable: { ^['Type', 'Path', 'Name'], [$'''Folder''', $'''sites/MyTeamPowerApps/Shared Documents''', $'''Database_test'''] } DataTable=> DataTable
+Variables.CreateNewList List=> List
+Variables.AddItemToList Item: $'''/Shared Documents''' List: List
+SET intConditon TO List.Count
+LOOP WHILE (intConditon) <> (0)
+    SET strPath TO List[0]
+    Variables.RemoveItemFromList.RemoveItemFromListByIndex ItemIndex: 0 List: List
+    @@dataset: 'LearnSharePoint - https://uithcm.sharepoint.com/sites/LearnSharePoint'
+@@path: '%strPath%'
+@@connectionDisplayName: 'Cr8b6bc_shared_sharepointonline_ab60a893'
+External.InvokeCloudConnector Connection: '181259e6-5297-4753-8ac9-0689eaa1bd85' ConnectorId: '/providers/Microsoft.PowerApps/apis/shared_sharepointonline' OperationId: 'GetFolderMetadataByPath' @dataset: $'''https://uithcm.sharepoint.com/sites/LearnSharePoint''' @path: strPath @GetFolderMetadataByPathResponse=> GetFolderMetadataByPathResponse
+    @@dataset: 'LearnSharePoint - https://uithcm.sharepoint.com/sites/LearnSharePoint'
+@@id: '%GetFolderMetadataByPathResponse[\'Id\']%'
+@@connectionDisplayName: 'Cr8b6bc_shared_sharepointonline_ab60a893'
+External.InvokeCloudConnector Connection: '181259e6-5297-4753-8ac9-0689eaa1bd85' ConnectorId: '/providers/Microsoft.PowerApps/apis/shared_sharepointonline' OperationId: 'ListFolder' @dataset: $'''https://uithcm.sharepoint.com/sites/LearnSharePoint''' @id: GetFolderMetadataByPathResponse['Id'] @ListFolderResponse=> ListFolderResponse
+    LOOP FOREACH CurrentItem3 IN ListFolderResponse
+        Variables.AddRowToDataTable.AppendRowToDataTable DataTable: DataTable RowToAdd: [CurrentItem3.IsFolder, CurrentItem3.Path, CurrentItem3.DisplayName]
+        IF CurrentItem3.IsFolder = $'''True''' THEN
+            Variables.AddItemToList Item: CurrentItem3.Path List: List
+        END
+    END
+    SET intConditon TO List.Count
+END
+
+# [ControlRepository][PowerAutomateDesktop]
+
+{
+  "ControlRepositorySymbols": [],
+  "ImageRepositorySymbol": {
+    "Repository": "{\r\n  \"Folders\": [],\r\n  \"Images\": [],\r\n  \"Version\": 1\r\n}",
+    "ImportMetadata": {},
+    "Name": "imgrepo"
+  },
+  "ConnectionReferences": [
+    {
+      "ConnectorId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline",
+      "DisplayName": "Cr8b6bc_shared_sharepointonline_ab60a893",
+      "InternalId": "181259e6-5297-4753-8ac9-0689eaa1bd85",
+      "IsDisabled": false,
+      "LogicalName": "Cr8b6bc_shared_sharepointonline_ab60a893c6274117a6e62fd306bc0c2b",
+      "IsEmbedded": false,
+      "ConnectionName": "936fc1b509d042178aed7e328b9930d2",
+      "ConnectionDisplayName": "14520749@ms.uit.edu.vn"
+    }
+  ]
+}
