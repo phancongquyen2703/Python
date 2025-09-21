@@ -1,0 +1,14 @@
+**REGION Init Input Variable
+SET strClient_id TO $'''148674557022-3leusr0eu8bo0g8t64anpo72e84eu5mc.apps.googleusercontent.com'''
+SET strClient_secret TO $'''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'''
+IF (Folder.IfFolderExists.DoesNotExist Path: $'''C:\\Temp''') THEN
+    Folder.Create FolderPath: $'''C:\\Temp''' FolderName: $'''%''%''' Folder=> lstNewFolder
+END
+SET strRedirect_uri TO $'''http://localhost'''
+SET strToken_file TO $'''C:\\Temp\\google_token.txt'''
+SET strAccess_token TO $'''%''%'''
+SET bolIsTokenFile TO True
+**ENDREGION
+CALL GetAccessToken
+**REGION CheckTokenFile
+**ENDREGION
