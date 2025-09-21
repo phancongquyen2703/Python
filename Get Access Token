@@ -1,0 +1,30 @@
+**REGION CheckTokenFile
+IF (File.IfFile.Exists File: strToken_file) THEN
+    Logging.LogMessage Message: $'''Token file is exists. Check Expire Token''' LogLevel: Logging.LogLevel.InfoLevel
+    SET bolIsTokenFile TO True
+ELSE
+    Logging.LogMessage Message: $'''Token file is not exists. No Token.''' LogLevel: Logging.LogLevel.InfoLevel
+    SET bolIsTokenFile TO False
+END
+**ENDREGION
+**REGION Get Access Token
+IF bolIsTokenFile = False THEN
+    CALL AcquiredToken
+    IF bolIsError = True THEN
+        Scripting.RunDotNetScript Language: System.DotNetActionLanguageType.VisualBasic Script: $'''Throw new Exception(\"Can not get Access Token.\")'''
+    END
+ELSE
+    **REGION Refresh access token
+    # Check Expires Access Token
+    File.ReadTextFromFile.ReadText File: strToken_file Encoding: File.TextFileEncoding.UTF8 Content=> strAccess_token
+    Web.InvokeWebService.InvokeWebService Url: $'''https://www.googleapis.com/drive/v3/about?fields=user''' Method: Web.Method.Get Accept: $'''application/json''' ContentType: $'''application/json''' CustomHeaders: $'''Authorization: Bearer %strAccess_token%''' ConnectionTimeout: 30 FollowRedirection: True ClearCookies: False FailOnErrorStatus: False EncodeRequestBody: False UserAgent: $'''Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.21) Gecko/20100312 Firefox/3.6''' Encoding: Web.Encoding.AutoDetect AcceptUntrustedCertificates: False TrimRequestBody: True StatusCode=> intStatusCode
+    Logging.LogMessage Message: $'''Check Expires Token Status %intStatusCode%''' LogLevel: Logging.LogLevel.InfoLevel
+    IF intStatusCode <> 200 THEN
+        CALL AcquiredToken
+        IF bolIsError = True THEN
+            Scripting.RunDotNetScript Language: System.DotNetActionLanguageType.VisualBasic Script: $'''Throw new Exception(\"Can not get Access Token.\")'''
+        END
+    END
+    **ENDREGION
+END
+**ENDREGION
