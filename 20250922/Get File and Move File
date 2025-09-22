@@ -1,0 +1,140 @@
+Skip to content
+Chat history
+
+You said:
+Làm thế nào để get list file in folder Gdrive bằng API power automate desktop
+ChatGPT said:
+Bạn muốn lấy danh sách file trong 1 folder của Google Drive bằng Power Automate Desktop (PAD) thông qua Google Drive API đúng không? 👍
+
+Mình hướng dẫn chi tiết từng bước nhé:
+
+🔑 1. Chuẩn bị trước
+Bạn cần Access Token (từ OAuth2 hoặc Service Account) với scope:
+
+https://www.googleapis.com/auth/drive
+Lưu Folder ID của thư mục bạn muốn lấy file.
+Ví dụ URL folder:
+
+https://drive.google.com/drive/folders/1ABCDefGHIJKLmnop
+👉 Folder ID = 1ABCDefGHIJKLmnop
+
+📡 2. API Google Drive để lấy danh sách file
+Endpoint:
+
+GET https://www.googleapis.com/drive/v3/files
+Query để lọc theo folder:
+
+?q='<FolderID>' in parents and trashed=false
+Ví dụ đầy đủ:
+
+GET https://www.googleapis.com/drive/v3/files?q='1ABCDefGHIJKLmnop' in parents and trashed=false&fields=files(id,name,mimeType)
+Header:
+
+{
+  "Authorization": "Bearer <ACCESS_TOKEN>"
+}
+⚙️ 3. Triển khai trong Power Automate Desktop
+Dùng action: Invoke Web Service (hoặc Invoke Web Request).
+
+Method: GET
+
+URL:
+
+https://www.googleapis.com/drive/v3/files?q='<FolderID>' in parents and trashed=false&fields=files(id,name,mimeType)
+Headers:
+
+Authorization: Bearer %Access_Token%
+Nhận Response JSON → parse ra danh sách file:
+Ví dụ response:
+
+{
+  "files": [
+    { "id": "1x2y3z", "name": "file1.pdf", "mimeType": "application/pdf" },
+    { "id": "4a5b6c", "name": "file2.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }
+  ]
+}
+Parse JSON trong PAD:
+
+Dùng action: Convert JSON to custom object
+
+Sau đó có thể For Each để duyệt danh sách file.
+
+📌 4. Lấy cả subfolder?
+API mặc định chỉ trả file trong folder trực tiếp.
+
+Nếu muốn lấy tất cả subfolder + file bên trong → bạn phải chạy đệ quy:
+
+Gọi API lấy list files có mimeType = 'application/vnd.google-apps.folder'.
+
+Sau đó lặp qua từng folder con để gọi lại API.
+
+👉 Bạn có muốn mình viết mẫu flow PAD (gồm HTTP request + Parse JSON + Loop) để lấy danh sách file trong folder không?
+
+You said:
+Làm thế nào để move file hoặc folder trong Gdrive bằng power automate desktop
+ChatGPT said:
+Để move file hoặc folder trong Google Drive bằng Power Automate Desktop (PAD) thì bạn sẽ thao tác với Google Drive API. Bản chất “move” trong GDrive là thay đổi parents của file/folder (remove old parent, add new parent).
+
+🔑 1. Chuẩn bị
+Access Token (OAuth2) với scope:
+
+https://www.googleapis.com/auth/drive
+ID của file/folder cần move (ví dụ: 1ABCxyz...).
+
+ID của folder đích (ví dụ: 1Target123...).
+
+ID của folder gốc (old parent) nếu bạn muốn bỏ nó khỏi thư mục cũ.
+
+📡 2. API Move file/folder
+Google Drive API endpoint:
+
+PATCH https://www.googleapis.com/drive/v3/files/{fileId}?addParents={newParentId}&removeParents={oldParentId}&fields=id,parents
+Ví dụ
+Move file 1ABCxyz từ folder 1OLD111 sang folder 1NEW222:
+
+PATCH https://www.googleapis.com/drive/v3/files/1ABCxyz?addParents=1NEW222&removeParents=1OLD111&fields=id,parents
+Header:
+
+Authorization: Bearer <ACCESS_TOKEN>
+Content-Type: application/json
+Body: (có thể để trống vì chỉ cần query params)
+
+⚙️ 3. Triển khai trong Power Automate Desktop
+Dùng action: Invoke Web Service
+
+Method: PATCH
+
+URL:
+
+https://www.googleapis.com/drive/v3/files/%FileID%?addParents=%NewFolderID%&removeParents=%OldFolderID%&fields=id,parents
+Headers:
+
+Authorization: Bearer %Access_Token%
+Content-Type: application/json
+Body: {} (hoặc để trống)
+
+Xử lý Response
+
+Nếu thành công, JSON trả về sẽ chứa id và parents mới.
+
+Bạn có thể dùng Convert JSON to custom object để parse.
+
+📌 4. Move Folder
+Google Drive treats folders cũng như file (mimeType = application/vnd.google-apps.folder).
+
+Vì vậy move folder cũng dùng API trên giống hệt như move file. ✅
+
+🔎 5. Lưu ý
+Nếu bạn không truyền removeParents, file sẽ nằm ở cả hai folder (Google Drive cho phép 1 file có nhiều parents).
+
+Nếu muốn chỉ ở 1 folder duy nhất → luôn truyền cả addParents và removeParents.
+
+👉 Bạn có muốn mình viết luôn mẫu action trong PAD (Invoke Web Service) để bạn copy-paste vào flow, chỉ cần thay ID và Token không?
+
+
+
+
+
+
+Không có tệp nào được chọnKhông có tệp nào được chọn
+ChatGPT can make mistakes. Check important info.
