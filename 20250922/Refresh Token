@@ -1,0 +1,11 @@
+WebAutomation.LaunchChrome.LaunchChrome Url: $'''https://accounts.google.com/o/oauth2/v2/auth?scope=https://www.googleapis.com/auth/drive&access_type=offline&include_granted_scopes=true&response_type=code&redirect_uri=%strRedirect_uri%&client_id=%strClient_id%&prompt=consent''' WindowState: WebAutomation.BrowserWindowState.Maximized ClearCache: False ClearCookies: False WaitForPageToLoadTimeout: 30 Timeout: 30 PiPUserDataFolderMode: WebAutomation.PiPUserDataFolderModeEnum.DefaultProfile TargetDesktop: $'''{\"DisplayName\":\"Local computer\",\"Route\":{\"ServerType\":\"Local\",\"ServerAddress\":\"\"},\"DesktopType\":\"local\"}''' BrowserInstance=> BrowserGoogleAPI
+
+
+
+
+******************
+
+
+Web.InvokeWebService.InvokeWebServicePost Url: $'''https://oauth2.googleapis.com/token''' Accept: $'''application/json''' ContentType: $'''application/x-www-form-urlencoded''' RequestBody: $'''client_id=%strClient_id%&client_secret=%strClient_secret%&refresh_token=%strRefresh_token%&grant_type=refresh_token
+''' ConnectionTimeout: 30 FollowRedirection: True ClearCookies: False FailOnErrorStatus: False EncodeRequestBody: False UserAgent: $'''Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.21) Gecko/20100312 Firefox/3.6''' Encoding: Web.Encoding.AutoDetect AcceptUntrustedCertificates: False TrimRequestBody: True Response=> strWebServiceResponse StatusCode=> intStatusCode
+
