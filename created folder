@@ -1,0 +1,157 @@
+À 👍 bạn đang đụng đúng chỗ hơi “khó chịu” của Google Drive API:
+mặc định API chỉ thao tác với My Drive cá nhân, nếu không bật tham số đặc biệt thì nó sẽ bỏ qua Shared Drive (Drive chung).
+
+🚨 Nguyên nhân bạn không thấy Shared Drive
+
+Bạn gọi API files.list hoặc files.create nhưng chưa thêm tham số:
+
+supportsAllDrives=true
+
+includeItemsFromAllDrives=true (khi list file)
+
+driveId=<ID của shared drive> (khi làm việc trong Shared Drive)
+
+Nếu không có → Google Drive API chỉ trả về My Drive.
+
+✅ Cách fix (ví dụ cụ thể)
+1. Tạo folder trong Shared Drive
+
+Endpoint:
+
+POST https://www.googleapis.com/drive/v3/files?supportsAllDrives=true
+
+
+Headers:
+
+Authorization: Bearer <ACCESS_TOKEN>
+Content-Type: application/json
+
+
+Body JSON (ví dụ tạo folder trong Shared Drive có driveId = 0AJxxxxxx):
+
+{
+  "name": "TestFolder",
+  "mimeType": "application/vnd.google-apps.folder",
+  "parents": ["0AJxxxxxx"]   // chính là ID của Shared Drive
+}
+
+2. Lấy danh sách file trong Shared Drive
+GET https://www.googleapis.com/drive/v3/files?driveId=0AJxxxxxx&includeItemsFromAllDrives=true&supportsAllDrives=true&corpora=drive&fields=files(id,name,mimeType)
+
+
+driveId=0AJxxxxxx → ID của Shared Drive
+
+corpora=drive → buộc API lấy trong Shared Drive đó (chứ không phải My Drive)
+
+supportsAllDrives=true → bật chế độ cho Shared Drive
+
+includeItemsFromAllDrives=true → lấy cả nội dung của Shared Drive
+
+3. Quyền truy cập
+
+Token của bạn phải có scope:
+
+https://www.googleapis.com/auth/drive (full access)
+
+hoặc ít nhất https://www.googleapis.com/auth/drive.file (file bạn tạo/được chia sẻ).
+
+Tài khoản dùng OAuth phải có quyền trong Shared Drive (VD: Member, Contributor, Manager).
+
+🚀 Tích hợp trong PAD
+
+Khi bạn dùng Invoke Web Service:
+
+URL phải có supportsAllDrives=true
+
+Khi tạo folder, trong body dùng "parents": ["<SharedDriveId>"] thay vì "root".
+
+👉 Bạn có muốn mình viết cho bạn PAD mẫu .txt import chỉ để tạo folder trong Shared Drive (có tham số supportsAllDrives + driveId) không?
+
+You said:
+Hướng dẫn mình kiểm tra folder đã tồn tại trong Share Drive luôn nhé
+ChatGPT said:
+
+Rồi 👍 mình sẽ hướng dẫn bạn cách kiểm tra một folder đã tồn tại trong Shared Drive bằng Google Drive API, áp dụng cho cả Power Automate Desktop (PAD).
+
+📌 1. Ý tưởng
+
+Thay vì tạo folder thẳng, ta dùng files.list API để tìm folder theo name và parent trong Shared Drive.
+
+Nếu có kết quả → folder đã tồn tại.
+
+Nếu không có kết quả → folder chưa có → bạn có thể tạo mới.
+
+📌 2. API Request
+🔹 Endpoint
+GET https://www.googleapis.com/drive/v3/files?q=name='Invoices' and mimeType='application/vnd.google-apps.folder' and '0AJxxxxxx' in parents and trashed=false&driveId=0AJxxxxxx&includeItemsFromAllDrives=true&supportsAllDrives=true&corpora=drive&fields=files(id,name)
+
+🔹 Giải thích
+
+q=... → filter:
+
+name='Invoices' → tên folder cần tìm.
+
+mimeType='application/vnd.google-apps.folder' → chỉ lấy folder.
+
+'0AJxxxxxx' in parents → folder cha chính là Shared Drive ID hoặc folder con trong Shared Drive.
+
+trashed=false → bỏ qua file đã xóa.
+
+driveId=0AJxxxxxx → ID của Shared Drive.
+
+includeItemsFromAllDrives=true → cho phép tìm cả trong Shared Drive.
+
+supportsAllDrives=true → bật chế độ hỗ trợ Shared Drive.
+
+corpora=drive → chỉ tìm trong Shared Drive này.
+
+fields=files(id,name) → chỉ lấy id và tên (đỡ nặng).
+
+📌 3. Kết quả trả về
+
+Nếu folder đã tồn tại:
+
+{
+  "files": [
+    {
+      "id": "1AbCDefGhijkLMNOPqrSTuvWxYZ",
+      "name": "Invoices"
+    }
+  ]
+}
+
+
+Nếu folder chưa tồn tại:
+
+{
+  "files": []
+}
+
+📌 4. Áp dụng trong PAD
+
+Invoke Web Service
+
+Method: GET
+
+URL: copy endpoint ở trên, thay Invoices bằng biến %FolderName% và 0AJxxxxxx bằng %SharedDriveId%.
+
+Header:
+
+Authorization: Bearer %AccessToken%
+
+Parse JSON (dùng action Convert JSON to custom object)
+
+Input: %ResponseContent%
+
+If condition
+
+Nếu %ResponseObject["files"]% có item → folder tồn tại (lấy id).
+
+Nếu rỗng → gọi API files.create để tạo folder mới.
+
+👉 Bạn có muốn mình viết hẳn một flow PAD mẫu .txt import:
+
+Input: %AccessToken%, %FolderName%, %SharedDriveId%
+
+Output: %FolderId% (id folder đã tồn tại hoặc vừa tạo)
+để bạn chỉ cần import vào PAD chạy luôn không?
