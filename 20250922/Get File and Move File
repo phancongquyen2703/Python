@@ -141,3 +141,525 @@ ChatGPT can make mistakes. Check important info.
 
 
 GET https://www.googleapis.com/drive/v3/files?q='<FolderID>' in parents and trashed=false&driveId=<DriveID>&corpora=drive&includeItemsFromAllDrives=true&supportsAllDrives=true&fields=files(id,name,mimeType,parents)
+Skip to content
+Chat history
+
+You said:
+Làm thế nào để get list file in folder Gdrive bằng API power automate desktop
+ChatGPT said:
+Bạn muốn lấy danh sách file trong 1 folder của Google Drive bằng Power Automate Desktop (PAD) thông qua Google Drive API đúng không? 👍
+
+Mình hướng dẫn chi tiết từng bước nhé:
+
+🔑 1. Chuẩn bị trước
+Bạn cần Access Token (từ OAuth2 hoặc Service Account) với scope:
+
+https://www.googleapis.com/auth/drive
+Lưu Folder ID của thư mục bạn muốn lấy file.
+Ví dụ URL folder:
+
+https://drive.google.com/drive/folders/1ABCDefGHIJKLmnop
+👉 Folder ID = 1ABCDefGHIJKLmnop
+
+📡 2. API Google Drive để lấy danh sách file
+Endpoint:
+
+GET https://www.googleapis.com/drive/v3/files
+Query để lọc theo folder:
+
+?q='<FolderID>' in parents and trashed=false
+Ví dụ đầy đủ:
+
+GET https://www.googleapis.com/drive/v3/files?q='1ABCDefGHIJKLmnop' in parents and trashed=false&fields=files(id,name,mimeType)
+Header:
+
+{
+  "Authorization": "Bearer <ACCESS_TOKEN>"
+}
+⚙️ 3. Triển khai trong Power Automate Desktop
+Dùng action: Invoke Web Service (hoặc Invoke Web Request).
+
+Method: GET
+
+URL:
+
+https://www.googleapis.com/drive/v3/files?q='<FolderID>' in parents and trashed=false&fields=files(id,name,mimeType)
+Headers:
+
+Authorization: Bearer %Access_Token%
+Nhận Response JSON → parse ra danh sách file:
+Ví dụ response:
+
+{
+  "files": [
+    { "id": "1x2y3z", "name": "file1.pdf", "mimeType": "application/pdf" },
+    { "id": "4a5b6c", "name": "file2.docx", "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }
+  ]
+}
+Parse JSON trong PAD:
+
+Dùng action: Convert JSON to custom object
+
+Sau đó có thể For Each để duyệt danh sách file.
+
+📌 4. Lấy cả subfolder?
+API mặc định chỉ trả file trong folder trực tiếp.
+
+Nếu muốn lấy tất cả subfolder + file bên trong → bạn phải chạy đệ quy:
+
+Gọi API lấy list files có mimeType = 'application/vnd.google-apps.folder'.
+
+Sau đó lặp qua từng folder con để gọi lại API.
+
+👉 Bạn có muốn mình viết mẫu flow PAD (gồm HTTP request + Parse JSON + Loop) để lấy danh sách file trong folder không?
+
+You said:
+Làm thế nào để move file hoặc folder trong Gdrive bằng power automate desktop
+ChatGPT said:
+Để move file hoặc folder trong Google Drive bằng Power Automate Desktop (PAD) thì bạn sẽ thao tác với Google Drive API. Bản chất “move” trong GDrive là thay đổi parents của file/folder (remove old parent, add new parent).
+
+🔑 1. Chuẩn bị
+Access Token (OAuth2) với scope:
+
+https://www.googleapis.com/auth/drive
+ID của file/folder cần move (ví dụ: 1ABCxyz...).
+
+ID của folder đích (ví dụ: 1Target123...).
+
+ID của folder gốc (old parent) nếu bạn muốn bỏ nó khỏi thư mục cũ.
+
+📡 2. API Move file/folder
+Google Drive API endpoint:
+
+PATCH https://www.googleapis.com/drive/v3/files/{fileId}?addParents={newParentId}&removeParents={oldParentId}&fields=id,parents
+Ví dụ
+Move file 1ABCxyz từ folder 1OLD111 sang folder 1NEW222:
+
+PATCH https://www.googleapis.com/drive/v3/files/1ABCxyz?addParents=1NEW222&removeParents=1OLD111&fields=id,parents
+Header:
+
+Authorization: Bearer <ACCESS_TOKEN>
+Content-Type: application/json
+Body: (có thể để trống vì chỉ cần query params)
+
+⚙️ 3. Triển khai trong Power Automate Desktop
+Dùng action: Invoke Web Service
+
+Method: PATCH
+
+URL:
+
+https://www.googleapis.com/drive/v3/files/%FileID%?addParents=%NewFolderID%&removeParents=%OldFolderID%&fields=id,parents
+Headers:
+
+Authorization: Bearer %Access_Token%
+Content-Type: application/json
+Body: {} (hoặc để trống)
+
+Xử lý Response
+
+Nếu thành công, JSON trả về sẽ chứa id và parents mới.
+
+Bạn có thể dùng Convert JSON to custom object để parse.
+
+📌 4. Move Folder
+Google Drive treats folders cũng như file (mimeType = application/vnd.google-apps.folder).
+
+Vì vậy move folder cũng dùng API trên giống hệt như move file. ✅
+
+🔎 5. Lưu ý
+Nếu bạn không truyền removeParents, file sẽ nằm ở cả hai folder (Google Drive cho phép 1 file có nhiều parents).
+
+Nếu muốn chỉ ở 1 folder duy nhất → luôn truyền cả addParents và removeParents.
+
+👉 Bạn có muốn mình viết luôn mẫu action trong PAD (Invoke Web Service) để bạn copy-paste vào flow, chỉ cần thay ID và Token không?
+
+You said:
+Tôi muốn tìm trong ShareDrive
+ChatGPT said:
+À 👍 mình hiểu rồi: bạn muốn move file hoặc folder trong Shared Drive (Google Shared Drive) bằng Power Automate Desktop.
+
+Trong Google Drive API, thao tác với My Drive và Shared Drive (Team Drive) gần như giống nhau, chỉ khác vài tham số.
+
+🔑 1. Điểm khác biệt khi làm với Shared Drive
+File/Folder trong Shared Drive cũng có id riêng (giống My Drive).
+
+Nhưng khi bạn gọi API, bạn cần thêm tham số:
+
+supportsAllDrives=true
+Nếu list file trong Shared Drive → thêm:
+
+includeItemsFromAllDrives=true
+corpora=drive
+driveId=<SharedDriveID>
+📡 2. API Move file/folder trong Shared Drive
+Giống My Drive, chỉ thêm supportsAllDrives=true.
+
+PATCH https://www.googleapis.com/drive/v3/files/{fileId}?addParents={newParentId}&removeParents={oldParentId}&supportsAllDrives=true&fields=id,parents
+Ví dụ
+Move file 1FILE_ABC từ folder 1OLDFOLDER sang folder 1NEWFOLDER trong Shared Drive:
+
+PATCH https://www.googleapis.com/drive/v3/files/1FILE_ABC?addParents=1NEWFOLDER&removeParents=1OLDFOLDER&supportsAllDrives=true&fields=id,parents
+Header:
+
+Authorization: Bearer <ACCESS_TOKEN>
+Content-Type: application/json
+Body: {} (hoặc trống)
+
+⚙️ 3. Thực hiện trong Power Automate Desktop
+Action: Invoke Web Service
+
+Method: PATCH
+
+URL:
+
+https://www.googleapis.com/drive/v3/files/%FileID%?addParents=%NewFolderID%&removeParents=%OldFolderID%&supportsAllDrives=true&fields=id,parents
+Headers:
+
+Authorization: Bearer %Access_Token%
+Content-Type: application/json
+Body: {}
+
+Response trả về:
+
+{
+  "id": "1FILE_ABC",
+  "parents": ["1NEWFOLDER"]
+}
+📌 4. Lưu ý khi move trong Shared Drive
+File/folder phải thuộc cùng Shared Drive mới move được (không move cross-drive được bằng cách đổi parent).
+
+Nếu bạn cần move giữa Shared Drive khác nhau → phải copy file sang drive mới rồi xóa file cũ.
+
+Account/service account dùng token phải có quyền "Content manager" hoặc cao hơn trong Shared Drive.
+
+👉 Bạn có muốn mình viết luôn 2 flow mẫu cho PAD:
+
+Move trong cùng Shared Drive (đổi parent).
+
+Move sang Shared Drive khác (copy + delete)?
+
+You said:
+Tôi muốn get file từ shareDrive
+ChatGPT said:
+Ok 👍 để get danh sách file trong Shared Drive (Google Drive – Shared Drive) bằng Power Automate Desktop (PAD) qua API, bạn làm như sau:
+
+🔑 1. Chuẩn bị
+Access Token có scope:
+
+https://www.googleapis.com/auth/drive
+ID của Shared Drive (driveId).
+Bạn có thể lấy ID này trong URL khi mở Shared Drive:
+
+https://drive.google.com/drive/u/0/folders/0AAbCdEfGhIJkLmNOp
+👉 driveId = 0AAbCdEfGhIJkLmNOp
+
+(Tùy chọn) Folder ID trong Shared Drive nếu bạn chỉ muốn lấy file trong một folder cụ thể.
+
+📡 2. API lấy file từ Shared Drive
+📍 Lấy tất cả file trong Shared Drive
+GET https://www.googleapis.com/drive/v3/files?corpora=drive&driveId=<DriveID>&includeItemsFromAllDrives=true&supportsAllDrives=true&q=trashed=false&fields=files(id,name,mimeType,parents)
+📍 Lấy file trong một folder cụ thể của Shared Drive
+GET https://www.googleapis.com/drive/v3/files?q='<FolderID>' in parents and trashed=false&driveId=<DriveID>&corpora=drive&includeItemsFromAllDrives=true&supportsAllDrives=true&fields=files(id,name,mimeType,parents)
+Header:
+
+Authorization: Bearer <ACCESS_TOKEN>
+⚙️ 3. Thực hiện trong Power Automate Desktop
+Thêm action Invoke Web Service (hoặc Web Request):
+
+Method: GET
+
+URL: (ví dụ lấy trong một folder)
+
+https://www.googleapis.com/drive/v3/files?q='1FOLDER_ABC' in parents and trashed=false&driveId=0AAbCdEfGhIJkLmNOp&corpora=drive&includeItemsFromAllDrives=true&supportsAllDrives=true&fields=files(id,name,mimeType,parents)
+Headers:
+
+Authorization: Bearer %Access_Token%
+Parse JSON Response
+Response sẽ có dạng:
+
+{
+  "files": [
+    {
+      "id": "1x2y3zABC",
+      "name": "Report.pdf",
+      "mimeType": "application/pdf",
+      "parents": ["1FOLDER_ABC"]
+    },
+    {
+      "id": "4a5b6cDEF",
+      "name": "Data.xlsx",
+      "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "parents": ["1FOLDER_ABC"]
+    }
+  ]
+}
+Dùng action Convert JSON to custom object → duyệt files bằng For Each để lấy thông tin.
+
+📌 4. Lưu ý
+Nếu bạn không truyền q='<FolderID>' in parents → API sẽ trả về toàn bộ file trong Shared Drive.
+
+File và Folder trong Shared Drive đều là files, bạn phân biệt qua mimeType:
+
+Folder: application/vnd.google-apps.folder
+
+File: các loại mime khác (pdf, docx, xlsx…)
+
+👉 Bạn có muốn mình viết luôn mẫu flow PAD (gồm Invoke Web Service + Parse JSON + Loop) để bạn chỉ cần thay Access Token, DriveID, FolderID là chạy được không?
+
+You said:
+Giải thích cho tôi chi tiết tại sao trong URL lại có ?, and, &. 
+Sử dụng nó như thế nào, đưa ra ví dụ
+ChatGPT said:
+
+Thought for 25s
+Tuyệt — mình giải thích rõ ràng, ngắn gọn và có ví dụ cụ thể liên quan tới Google Drive API luôn để bạn áp dụng vào Power Automate Desktop (PAD).
+
+1) Cấu trúc cơ bản của một URL
+scheme://host/path?query#fragment
+Ví dụ:
+
+https://api.example.com/search?q=cat&lang=vi#top
+? bắt đầu query string (phần tham số).
+
+Query string gồm các cặp key=value.
+
+Các cặp được phân tách bằng &.
+
+#fragment là phần tham chiếu (không gửi tới server).
+
+2) Vai trò của ?, &, =
+? — chỉ ra chỗ bắt đầu danh sách tham số. Chỉ có một ? trong URL (phần sau ? là query).
+
+& — ngăn cách hai tham số (param) khác nhau trong query string.
+
+= — nối tên tham số với giá trị của nó (key=value).
+
+Ví dụ:
+
+https://example.com/search?query=cat&lang=vi
+Ở đây có 2 tham số: query=cat và lang=vi.
+
+3) Còn từ and ở đâu ra?
+and không phải ký tự điều khiển URL — là một chữ/ toán tử nằm trong giá trị của tham số (value).
+
+Ví dụ ở Google Drive API: q nhận một biểu thức điều kiện dạng SQL-like:
+q = "'<FolderID>' in parents and trashed=false"
+Nếu put trực tiếp vào URL thì and nằm trong value của q, không phải là ký hiệu phân tách tham số.
+
+Quan trọng: vì and cùng với dấu nháy, dấu cách, dấu = là ký tự đặc biệt trong URL nên phải mã hóa (URL-encode) giá trị trước khi ghép vào URL.
+
+4) URL-encoding (percent-encoding) — vì sao cần?
+Một số ký tự (space, quotes, &, ?, =, #, /, …) có nghĩa đặc biệt trong URL. Nếu xuất hiện trong giá trị, phải mã hóa để server hiểu đúng giá trị, tránh bị nhầm thành ký tự điều khiển.
+
+Một số map phổ biến:
+
+space → %20 (hoặc + trong application/x-www-form-urlencoded)
+
+' → %27
+
+= → %3D
+
+& → %26
+
+( → %28 , ) → %29
+
+, → %2C
+
+5) Ví dụ thực tế (Google Drive Shared Drive, có and trong q)
+Giả sử:
+
+FolderID = 1FOLDER_ABC
+
+DriveID = 0AAbCdEfGhIJkLmNOp
+
+Raw (chưa encode) dễ đọc:
+
+https://www.googleapis.com/drive/v3/files?
+q='1FOLDER_ABC' in parents and trashed=false
+&driveId=0AAbCdEfGhIJkLmNOp
+&corpora=drive
+&includeItemsFromAllDrives=true
+&supportsAllDrives=true
+&fields=files(id,name,mimeType)
+Phải encode phần q và fields trước khi lắp vào URL. Một phiên bản đã encode:
+
+GET https://www.googleapis.com/drive/v3/files?
+q=%271FOLDER_ABC%27%20in%20parents%20and%20trashed%3Dfalse
+&driveId=0AAbCdEfGhIJkLmNOp
+&corpora=drive
+&includeItemsFromAllDrives=true
+&supportsAllDrives=true
+&fields=files%28id%2Cname%2CmimeType%29
+Gộp lại thành 1 dòng (copy-paste được):
+
+https://www.googleapis.com/drive/v3/files?q=%271FOLDER_ABC%27%20in%20parents%20and%20trashed%3Dfalse&driveId=0AAbCdEfGhIJkLmNOp&corpora=drive&includeItemsFromAllDrives=true&supportsAllDrives=true&fields=files%28id%2Cname%2CmimeType%29
+Giải thích:
+
+%27 = ' (single quote)
+
+%20 = space
+
+%3D = =
+
+%28/%29/%2C = ( / ) / , trong fields
+
+6) Một ví dụ đơn giản khác (web search)
+Raw:
+
+https://example.com/search?q=cat videos&lang=vi
+Encode q:
+
+https://example.com/search?q=cat%20videos&lang=vi
+7) Lưu ý thực tế khi làm với PAD / HTTP requests
+Luôn URL-encode bất kỳ giá trị nào có dấu cách, ký tự đặc biệt (như q chứa and, ', =...). Nếu không, server sẽ hiểu sai (ví dụ & trong value sẽ bị coi là tham số mới).
+
+? chỉ dùng một lần; các tham số tiếp theo nối bằng &.
+
+Thứ tự các tham số không quan trọng (server thường xử lý theo tên param).
+
+Dùng hàm encodeURIComponent() (JS) hoặc hàm URL encode trong ngôn ngữ bạn dùng để tạo URL. Trong PAD, nếu không có action encode sẵn, dùng biến và gọi API encode hoặc build thủ công (cẩn thận).
+
+8) Cheat-sheet ngắn
+Dùng ? để bắt đầu phần tham số.
+
+Dùng & để nối nhiều tham số.
+
+Dùng = để gán key=value.
+
+Nếu value chứa and, space, ', &, =, … → URL-encode value đó.
+
+Nếu cần truyền câu lệnh điều kiện (như q của Drive) — nhớ encode toàn bộ biểu thức.
+
+Muốn mình tạo giúp URL đã encode sẵn cho request của bạn (ví dụ bạn đưa FolderID và DriveID), hoặc mẫu dòng PAD (Invoke Web Request) để copy-paste — gửi mình hai ID đó là mình build luôn cho bạn.
+
+You said:
+Ví dụ, Toi có Folder Id = 133222, Folder Name  = XXXX thuộc Folder ID, 
+TÔi muốn get list files và folder trong Folder Name = XXXX. Hãy viết cho tôi xử lý này bằng Power Automate Desktop HTTP
+ChatGPT said:
+Rõ rồi 👍 bạn có:
+
+Folder cha có ID = 133222
+
+Trong đó có một Folder con tên = XXXX
+
+Bạn muốn dùng Power Automate Desktop (PAD) với action Invoke Web Service (HTTP) để lấy list file & folder bên trong Folder con XXXX.
+
+Mình sẽ hướng dẫn thành 2 bước trong PAD:
+
+🔑 Ý tưởng
+Tìm Folder con XXXX trong Folder cha 133222 (lấy ID thật của XXXX).
+
+Vì Google Drive API chỉ query theo Folder ID, không query trực tiếp theo tên.
+
+List file & folder trong Folder XXXX bằng ID lấy được ở bước 1.
+
+⚙️ 1. Tìm Folder XXXX trong Folder cha 133222
+API:
+
+GET https://www.googleapis.com/drive/v3/files?q='133222' in parents and mimeType='application/vnd.google-apps.folder' and name='XXXX' and trashed=false&supportsAllDrives=true&includeItemsFromAllDrives=true&fields=files(id,name)
+Trong PAD (Invoke Web Service):
+
+Method: GET
+
+URL:
+
+https://www.googleapis.com/drive/v3/files?q=%27133222%27%20in%20parents%20and%20mimeType%3D%27application%2Fvnd.google-apps.folder%27%20and%20name%3D%27XXXX%27%20and%20trashed%3Dfalse&supportsAllDrives=true&includeItemsFromAllDrives=true&fields=files%28id%2Cname%29
+Headers:
+
+Authorization: Bearer %Access_Token%
+Response ví dụ:
+
+{
+  "files": [
+    { "id": "1FOLDERXXXX", "name": "XXXX" }
+  ]
+}
+👉 Lấy id = 1FOLDERXXXX để dùng ở bước 2.
+
+⚙️ 2. Lấy file & folder trong Folder XXXX
+API:
+
+GET https://www.googleapis.com/drive/v3/files?q='1FOLDERXXXX' in parents and trashed=false&supportsAllDrives=true&includeItemsFromAllDrives=true&fields=files(id,name,mimeType)
+Trong PAD (Invoke Web Service):
+
+Method: GET
+
+URL:
+
+https://www.googleapis.com/drive/v3/files?q=%271FOLDERXXXX%27%20in%20parents%20and%20trashed%3Dfalse&supportsAllDrives=true&includeItemsFromAllDrives=true&fields=files%28id%2Cname%2CmimeType%29
+Headers:
+
+Authorization: Bearer %Access_Token%
+Response ví dụ:
+
+{
+  "files": [
+    { "id": "1ABC", "name": "Document1.pdf", "mimeType": "application/pdf" },
+    { "id": "2DEF", "name": "SubFolder", "mimeType": "application/vnd.google-apps.folder" }
+  ]
+}
+👉 mimeType cho biết đó là file hay folder.
+
+📌 Trong PAD bạn làm Flow như sau:
+Action Invoke Web Service (GET #1) → tìm Folder ID của XXXX.
+
+Action Convert JSON to custom object → lấy id của folder XXXX.
+
+Action Invoke Web Service (GET #2) → lấy danh sách file/folder bên trong XXXX.
+
+Action Convert JSON to custom object → For Each qua files để xử lý.
+
+👉 Bạn có muốn mình viết luôn flow mẫu PAD dạng pseudocode (tên action + input + output) để bạn copy-paste từng bước vào PAD không?
+
+You said:
+Chổ bước 1 nếu không set MimeType có được không?
+ChatGPT said:
+Chuẩn câu hỏi hay 👌
+
+🔎 Trả lời ngắn gọn
+Không bắt buộc phải set mimeType khi query.
+
+Nhưng nếu không set, kết quả sẽ trả về tất cả file + folder có name = 'XXXX' trong parent 133222.
+
+Nếu trong folder cha có file trùng tên "XXXX" thì bạn sẽ lấy nhầm.
+
+📝 Chi tiết
+Nếu có mimeType='application/vnd.google-apps.folder'
+Query:
+
+q='133222' in parents and mimeType='application/vnd.google-apps.folder' and name='XXXX' and trashed=false
+👉 Chỉ trả về folder đúng tên XXXX.
+
+Nếu không có mimeType
+Query:
+
+q='133222' in parents and name='XXXX' and trashed=false
+👉 Có thể trả về:
+
+{
+  "files": [
+    { "id": "1FOLDERXXXX", "name": "XXXX", "mimeType": "application/vnd.google-apps.folder" },
+    { "id": "2FILEXXXX", "name": "XXXX", "mimeType": "application/pdf" }
+  ]
+}
+Bạn sẽ phải kiểm tra thêm trong code PAD:
+
+Nếu mimeType = application/vnd.google-apps.folder → đó là folder bạn cần.
+
+Nếu không → bỏ qua.
+
+📌 Kết luận
+Nếu bạn chắc chắn "XXXX" luôn là folder duy nhất → không set mimeType cũng được.
+
+Nếu cẩn thận, tránh nhầm file cùng tên → nên set mimeType='application/vnd.google-apps.folder'.
+
+👉 Bạn có muốn mình viết luôn đoạn logic For Each trong PAD để lọc mimeType=folder nếu bạn quyết định không dùng filter mimeType trong query không?
+
+
+
+
+
+
+Không có tệp nào được chọnKhông có tệp nào được chọn
+ChatGPT can make mistakes. Check important info.
