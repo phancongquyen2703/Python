@@ -138,3 +138,6 @@ Nếu muốn chỉ ở 1 folder duy nhất → luôn truyền cả addParents v�
 
 Không có tệp nào được chọnKhông có tệp nào được chọn
 ChatGPT can make mistakes. Check important info.
+
+
+GET https://www.googleapis.com/drive/v3/files?q='<FolderID>' in parents and trashed=false&driveId=<DriveID>&corpora=drive&includeItemsFromAllDrives=true&supportsAllDrives=true&fields=files(id,name,mimeType,parents)
