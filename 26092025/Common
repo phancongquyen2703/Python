@@ -1,0 +1,15 @@
+File.ConvertToBase64 File: $'''C:\\Users\\Acer\\Downloads\\aaa.xlsx''' Base64Text=> Base64Text
+Web.InvokeWebService.InvokeWebServicePost Url: $'''https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart''' Accept: $'''application/json''' ContentType: $'''multipart/related; boundary=boundary123''' CustomHeaders: $'''Authorization: Bearer %strAccess_token%''' RequestBody: $'''--boundary123
+Content-Type: application/json; charset=UTF-8
+
+{
+  \"name\": \"test.xlsx\"
+}
+
+--boundary123
+Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+Content-Transfer-Encoding: base64
+
+%Base64Text%
+
+--boundary123--''' ConnectionTimeout: 30 FollowRedirection: True ClearCookies: False FailOnErrorStatus: False EncodeRequestBody: False UserAgent: $'''Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.21) Gecko/20100312 Firefox/3.6''' Encoding: Web.Encoding.AutoDetect AcceptUntrustedCertificates: False TrimRequestBody: True ResponseHeaders=> WebServiceResponseHeaders Response=> WebServiceResponse StatusCode=> StatusCode
