@@ -1,0 +1,53 @@
+🧭 Step-by-Step: Upload to Shared Drive via HTTP
+1. Get the Shared Drive ID
+Use the Drive API to list shared drives:
+
+http
+GET https://www.googleapis.com/drive/v3/drives
+Authorization: Bearer YOUR_ACCESS_TOKEN
+This will return a list of shared drives and their id values.
+
+2. Upload File to Shared Drive
+Use the uploadType=multipart method with metadata and file content.
+
+HTTP POST Request:
+
+Code
+POST https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true
+Authorization: Bearer YOUR_ACCESS_TOKEN
+Content-Type: multipart/related; boundary=boundary123
+Body:
+
+Code
+--boundary123
+Content-Type: application/json; charset=UTF-8
+
+{
+  "name": "yourfile.xlsx",
+  "parents": ["SHARED_DRIVE_FOLDER_ID"],
+  "driveId": "YOUR_SHARED_DRIVE_ID"
+}
+
+--boundary123
+Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+Content-Transfer-Encoding: base64
+
+[Base64-encoded content here]
+
+--boundary123--
+Replace:
+
+YOUR_SHARED_DRIVE_ID with the ID of the shared drive
+
+SHARED_DRIVE_FOLDER_ID with the folder ID inside the shared drive (optional)
+
+[Base64-encoded content here] with the actual base64 content of your Excel file
+
+🧠 Notes
+If you're uploading to the root of the shared drive, omit the "parents" field.
+
+Make sure to set supportsAllDrives=true in the URL.
+
+You can also use includeItemsFromAllDrives=true when listing or searching files.
+
+Would you like help automating the folder lookup or building the full Power Automate Desktop flow for this? I can walk you through each step.
